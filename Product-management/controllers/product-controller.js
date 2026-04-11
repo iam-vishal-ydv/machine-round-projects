@@ -24,13 +24,15 @@ const fetchAllProducts = asyncHandler(async (req, res) => {
 
   const query = {};
   if (category) query.category = category;
-  if (inStock) query.inStock = inStock;
+  if (inStock !== undefined) {
+    query.inStock = inStock === "true";
+  }
 
   if (search && search.trim() !== "") {
     query.name = { $regex: search, $options: "i" };
   }
   const skip = (page - 1) * limit;
-  const total = await Product.countDocuments();
+  const total = await Product.countDocuments(query);
   const totalPages = Math.ceil(total / limit);
   const fetchProduct = await Product.find(query)
     .skip(skip)
@@ -40,10 +42,10 @@ const fetchAllProducts = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     message:
-      ~fetchProduct.length == 0
+      ~fetchProduct.length === 0
         ? "There is no product"
         : "Fetch all products successfully",
-    count: limit,
+    count: fetchProduct.length,
     total,
     page,
     pages: totalPages,
